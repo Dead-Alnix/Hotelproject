@@ -1,11 +1,12 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
 contract Hotel {
     address payable public deployer;
-    uint256 public bookedTime;
+    uint256 maxRoomNumber;
+    uint256[] instanceOfOwnersRooms;
     mapping(address => uint256[]) roomOwnedBy;
-    mapping(address => mapping(uint256 => uint256)) timestamp;
+    mapping(uint256 => uint256) timestamp;
     uint256[] availableRoomsInstance;
     uint256 price;
     uint256[] availableRooms;
@@ -19,8 +20,9 @@ contract Hotel {
 
     constructor(uint256 _maxRoomNumber) {
         require(_maxRoomNumber <= 20);
+        maxRoomNumber = _maxRoomNumber;
         deployer = payable(msg.sender);
-        for (uint256 i = 1; i <= _maxRoomNumber; i++) {
+        for (uint256 i = 1; i <= maxRoomNumber; i++) {
             if (i < 5) {
                 price = 0.01 ether;
             } else if (i >= 5 && i < 10) {
@@ -40,36 +42,42 @@ contract Hotel {
         return availableRooms;
     }
 
-    function bookRoom(uint256 _roomNumber) public payable {
+    function bookRoom(uint256 _roomNumber) public payable returns (bool) {
         require(
             _roomNumber > 0 && _roomNumber <= hotelRooms.length,
             "Room unavailable"
         );
-        require(msg.value >= hotelRooms[_roomNumber].roomPrice);
-        require(booked[_roomNumber] != true);
-
+        require(
+            msg.value >= hotelRooms[_roomNumber].roomPrice,
+            "Insufficient Fund to complete purchase"
+        );
+        require(booked[_roomNumber] == false, "Room has already been booked");
         roomOwnedBy[msg.sender].push(_roomNumber);
         booked[_roomNumber] = true;
-
-        // Removing room from available rooms
-        delete availableRoomsInstance;
-        for (uint256 i = 0; i < availableRooms.length; i++) {
-            if (i != _roomNumber) {
-                availableRoomsInstance.push(i);
-            }
-        }
-        availableRooms = availableRoomsInstance;
 
         // Emitting the transfer and doing th transfer
         deployer.transfer(msg.value);
         emit Transfer(msg.sender, deployer, msg.value);
 
-        //  Setting the time duration
-        bookedTime = block.timestamp;
-        timestamp[msg.sender][_roomNumber] = block.timestamp;
+        // Removing room from available rooms
+        delete availableRoomsInstance;
+        for (uint256 i = 0; i < availableRooms.length; i++) {
+            if (availableRooms[i] != _roomNumber) {
+                availableRoomsInstance.push(availableRooms[i]);
+            }
+        }
+        availableRooms = availableRoomsInstance;
+
+        // Setting timestamp
+        timestamp[_roomNumber] = block.timestamp + 30 minutes;
+        return true;
     }
 
     function viewRoomPrice(uint256 _roomNumber) public view returns (uint256) {
+        require(
+            _roomNumber > 0 && _roomNumber <= maxRoomNumber,
+            "Invalid room number specified"
+        );
         return hotelRooms[_roomNumber - 1].roomPrice;
     }
 
@@ -81,26 +89,36 @@ contract Hotel {
         return roomOwnedBy[_address];
     }
 
-    function extendTimeSpan(uint256 _roomNumber) public {
-        require(booked[_roomNumber] = true);
-        // Making sure the person really owns the room
-        bool ownedBySender = false;
+    function transferRoomOwnership(address _address, uint256 _roomNumber)
+        public
+    {
+        require(_address != msg.sender, "Can't transfer room to yourself");
+        require(booked[_roomNumber] == true, "Room isn't booked");
         for (uint256 i = 0; i < roomOwnedBy[msg.sender].length; i++) {
-            if (_roomNumber == _roomNumber) {
-                ownedBySender = true;
+            if (_roomNumber == roomOwnedBy[msg.sender][i]) {
+                // Removing rooms from the owner's rooms
+                delete instanceOfOwnersRooms;
+
+                for (uint256 j = 0; j < roomOwnedBy[msg.sender].length; j++) {
+                    if (_roomNumber != roomOwnedBy[msg.sender][j]) {
+                        instanceOfOwnersRooms.push(roomOwnedBy[msg.sender][j]);
+                    }
+                }
+                roomOwnedBy[msg.sender] = instanceOfOwnersRooms;
+                roomOwnedBy[_address].push(_roomNumber);
             }
-            require(ownedBySender == true);
         }
     }
 
-    function viewTimeLeft(address _address, uint256 _roomNumber)
-        public
-        view
-        returns (uint256)
-    {
-        return timestamp[_address][_roomNumber];
+    function viewTimeLeft(uint256 _roomNumber) public view returns (uint256) {
+        require(booked[_roomNumber] == true, "Room hasn't been booked");
+        return timestamp[_roomNumber];
     }
-    // function viewTimeStamps () public  {
-    //     return
-    // }
+
+    function extendTime(uint256 _roomNumber) public payable {
+        require(booked[_roomNumber] == true, "Room hasn't been booked");
+
+        emit Transfer(deployer, msg.sender, msg.value);
+        deployer.transfer(msg.value);
+    }
 }
