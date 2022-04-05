@@ -10,11 +10,12 @@
     "@truffle/hdwallet-provider": "^2.0.4",
     "dotenv": "^16.0.0",
     "ethereumjs-tx": "^2.1.2",
+    "nodemon": "^2.0.15",
     "web3": "^1.7.1"
   },
   "devDependencies": {},
   "scripts": {
-    "test": ""
+    "test": "nodemon web3.js"
   },
   "author": "Asare Foster",
   "license": "MIT"

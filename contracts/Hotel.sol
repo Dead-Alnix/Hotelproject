@@ -92,7 +92,7 @@ contract Hotel {
         return true;
     }
 
-    function getDiscount() public payable returns (uint256) {
+    function getDiscount() public  returns (uint256) {
         require(loyaltyPoints[msg.sender] >= 200, "Not enough loyaltyPoints");
         uint256 token = uint256(keccak256("grabtoken")) % 10000000;
         discountToken[msg.sender] = token;

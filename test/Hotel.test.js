@@ -93,5 +93,4 @@ contract("Hotel", (accounts) => {
     points2 = points2.toString();
     assert.equal(points2, 6, "After booking rooms that are ");
   });
-
 });
