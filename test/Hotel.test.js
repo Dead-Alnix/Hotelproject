@@ -37,8 +37,8 @@ contract("Hotel", (accounts) => {
       value: web3.utils.toWei("0.01", "ether"),
       from: accounts[1],
     });
-    await instance.bookRoom(12, 60, {
-      value: web3.utils.toWei("0.07", "ether"),
+    await instance.bookRoom(12, 800, {
+      value: web3.utils.toWei("0.9", "ether"),
       from: accounts[1],
     });
     let roomOwner = await instance.roomOwner(3);
@@ -73,7 +73,7 @@ contract("Hotel", (accounts) => {
   });
   // Testing transferRoomOwnership
   it("should return account[3] after transferring ownership to account[3]", async () => {
-    await instance.transferRoomOwnership(accounts[3], 2, { from: accounts[1] });
+    await instance.transferRoomOwnership(accounts[3], 2, {from: accounts[1]});
     let owner = await instance.roomOwner(2);
     assert.equal(owner, accounts[3], "It should be accounts[3] ");
   });
@@ -86,12 +86,12 @@ contract("Hotel", (accounts) => {
     dead = parseInt(await dead.toString()) + 30 * 60;
     assert.equal(time, dead, "Timestamp should increase by 30 minutes");
   });
-  it("should return timestamp + 60 minutes", async () => {
+  it("should return timestamp + 800 minutes", async () => {
     let time = await instance.viewTimeLeft.call(12);
     time = await time.toString();
     let dead = await instance.blockTimestamp(12);
-    dead = parseInt(await dead.toString()) + 60 * 60;
-    assert.equal(time, dead, "Timestamp should increase by 60 minutes");
+    dead = parseInt(await dead.toString()) + 60 * 800;
+    assert.equal(time, dead, "Timestamp should increase by 800 minutes");
   });
   // Testing the extendTime
   it("should return the timestamp + 60 minutes after time extension", async () => {
@@ -106,9 +106,28 @@ contract("Hotel", (accounts) => {
     assert.equal(time, newTime, "It should be timestamp + 60 ");
   });
   // Testing loyalty Points
-  it("should return 30 loyalty points", async () => {
+  it("should return change in loyalty points", async () => {
     let points = await instance.loyaltyPoints(accounts[1]);
     points = points.toString();
-    assert.equal(points, 30, "After booking rooms that are ");
+    assert.equal(points, 315, "After booking rooms that are ");
+    let points2 = await instance.loyaltyPoints(accounts[3]);
+    points2 = points2.toString();
+    assert.equal(points2, 6, "After booking rooms that are ");
+  });
+  // Testing the getDiscount
+  it("should return change in loyalty points", async () => {
+    await instance.getDiscount({from: accounts[1]});
+    let discountToken = await instance.discountToken(accounts[1]);
+    discountToken = await discountToken.toString();
+    assert.equal(4555544, discountToken, "discount gets set");
+  });
+  it("should return change in loyalty points", async () => {
+    let points = await instance.loyaltyPoints(accounts[1]);
+    points = points.toString();
+    assert.equal(
+      points,
+      0,
+      "After applying for discount loyalty points revert to 0"
+    );
   });
 });
