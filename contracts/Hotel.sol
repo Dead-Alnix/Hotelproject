@@ -2,17 +2,15 @@
 pragma solidity ^0.8.12;
 
 contract Hotel {
-    address payable public deployer;
-    // uint256 price;
-    mapping(uint256 => uint256) public blockTimestamp;
-    mapping(address => uint256) public discountToken;
     uint256 maxRoomNumber;
+    address payable  deployer;
+    mapping(uint256 => uint256)  timestamp;
+    mapping(address => uint256)  discountToken;
     mapping(uint256 => bool) public booked;
     mapping(address => uint256) public loyaltyPoints;
     mapping(uint256 => address) public roomOwner;
-    mapping(uint256 => uint256) timestamp;
     mapping(uint256 => uint256) public roomPrice;
-    mapping(uint256 => uint256) public roomLoyaltyPoints;
+    mapping(uint256 => uint256) internal roomLoyaltyPoints;
 
     constructor(uint256 _maxRoomNumber) {
         require(_maxRoomNumber <= 20);
@@ -65,7 +63,6 @@ contract Hotel {
 
         _period = _period * 60;
         timestamp[_roomNumber] = block.timestamp + _period;
-        blockTimestamp[_roomNumber] = block.timestamp;
 
         return true;
     }
@@ -73,13 +70,12 @@ contract Hotel {
     function transferRoomOwnership(address _address, uint256 _roomNumber)
         public returns(bool success)
     {
-        require(roomOwner[_roomNumber] == msg.sender);
+        require(roomOwner[_roomNumber] == msg.sender , "Can't transfer that doesn't belong to you");
         roomOwner[_roomNumber] = _address;
         return true;
     }
 
-    function viewTimeLeft(uint256 _roomNumber) public returns (uint256) {
-        require(booked[_roomNumber] = true);
+    function viewTimeLeft(uint256 _roomNumber) view public returns (uint256) {
         return timestamp[_roomNumber];
     }
 
@@ -123,7 +119,7 @@ contract Hotel {
             "Insufficient Fund to complete purchase"
         );
         require(booked[_roomNumber] == false, "Room has already been booked");
-        discountToken[msg.sender] == 0;
+        discountToken[msg.sender] = 0;
         //  When claiming a discount no loyalty points are added
 
         booked[_roomNumber] = true;
@@ -136,8 +132,14 @@ contract Hotel {
         // Setting timestamp
         _period = _period * 60;
         timestamp[_roomNumber] = block.timestamp + _period;
-        blockTimestamp[_roomNumber] = block.timestamp;
 
         return true;
+    }
+    function makeRoomAvilable(uint _roomNumber) public {
+        require(block.timestamp  >= timestamp[_roomNumber] , "Session not expired");
+        require(msg.sender == deployer , "Restricted to Deployer only");
+        booked[_roomNumber] = false;
+        delete timestamp[_roomNumber];
+        delete roomOwner[_roomNumber];
     }
 }
