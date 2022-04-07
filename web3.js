@@ -10,4 +10,10 @@ let abi = syncedFile.abi;
 let contractAddress = "0x25cDcd528E6F87DDe8fc67b42D74077Cc147D1dB";
 
 let contract = new foster.eth.Contract(abi, contractAddress);
-console.log(contract);
+// const getStatus = async () => {
+//   let booked = await contract.methods.roomPrice(1);
+//   booked = await booked;
+//   console.log(booked);
+// };
+console.log(contract.methods.roomPrice(1));
+// getStatus();
